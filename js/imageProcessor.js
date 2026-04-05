@@ -6,7 +6,7 @@ export const ImageProcessor = {
         const {
             targetResolution = 30, 
             depthScale = 0.1,
-            colorPreset = 'custom', // 'custom', 'gb', 'nes'
+            colorPreset = 'original', // 'original', 'custom', 'gb', 'nes'
             colorCount = 32
         } = options;
 
@@ -29,7 +29,9 @@ export const ImageProcessor = {
             const canvasData = ImageProcessor.getCanvasData(imageElement, curResX, curResY);
             
             let pixels = canvasData.pixels;
-            if (colorPreset !== 'custom') {
+            if (colorPreset === 'original') {
+                // Do nothing, keep original colors
+            } else if (colorPreset !== 'custom') {
                 pixels = ImageProcessor.applyPalette(pixels, Palettes[colorPreset]);
             } else {
                  // Basic Color Quantization using a simplified approach
@@ -203,8 +205,11 @@ export const ImageProcessor = {
             const gameCy = offsetY + (invertedY * finalScale);
 
             return {
+                mesh: "cube",
+                rotation: { x: 0, y: 0, z: 0 },
+                animations: [],
                 position: { x: gameCx, y: gameCy, z: 0 },
-                size: { x: gameWidth, y: gameHeight, z: depthScale },
+                scale: { x: gameWidth, y: gameHeight, z: depthScale },
                 color: rect.color
             };
         });

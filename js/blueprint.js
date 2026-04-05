@@ -4,6 +4,23 @@ import { MathUtils } from './utils.js';
  * Handles encoding and decoding of Perfect Tower 2 blueprint strings.
  */
 export const Blueprint = {
+    decodeRaw: (base64String) => {
+        try {
+            const binaryString = atob(base64String);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            const decompressed = window.pako.inflateRaw(bytes, { to: 'string' });
+            const outerJSON = JSON.parse(decompressed);
+            return JSON.parse(outerJSON.style[0]);
+        } catch (e) {
+            console.error(e);
+            return null;
+        }
+    },
+
     // Decoding Pipeline
     decode: (base64String) => {
         try {
@@ -51,7 +68,8 @@ export const Blueprint = {
                 material: { color: "#FFFFFF" },
                 mesh: {
                     shape: "cube",
-                    triangles: [0, 1, 2, 0, 2, 3, 8, 4, 7, 8, 7, 9, 17, 15, 6, 17, 6, 10, 12, 5, 14, 12, 14, 23, 18, 22, 13, 18, 13, 11, 19, 21, 16, 16, 21, 20]
+                    triangles: [0, 1, 2, 0, 2, 3, 8, 4, 7, 8, 7, 9, 17, 15, 6, 17, 6, 10, 12, 5, 14, 12, 14, 23, 18, 22, 13, 18, 13, 11, 19, 21, 16, 16, 21, 20],
+                    vertices: [0, 0, -0.09999993, 0, 0, -0.1, 0, 0, 0.01, -0.01, 0, 0, 0, 0, 0.1, 0, 0.1, 0, 0, 0, 0, 0.1, 0, 0, 0, 0, -0.09999993, 0, 0, -0.1, 0, 0, 0.01, -0.01, 0, 0, 0, 0, 0.1, 0, 0.1, 0, 0, 0, 0, 0.1, 0, 0, 0, 0, -0.09999993, 0, 0, -0.1, 0, 0, 0.01, -0.01, 0, 0, 0, 0, 0.1, 0, 0.1, 0, 0, 0, 0, 0.1, 0, 0]
                 },
                 missileEndColor: "#FF0000",
                 missileSpawnHeight: 4,
@@ -86,18 +104,24 @@ export const Blueprint = {
     // Apply engine constraints to an asset
     validateAsset: (asset) => {
         return {
+            animations: asset.animations || [],
+            color: asset.color || "#FFFFFF",
+            mesh: asset.mesh || "cube",
             position: {
                 x: MathUtils.clamp(asset.position.x, -4, 4),
                 y: MathUtils.clamp(asset.position.y, -1, 10),
                 z: MathUtils.clamp(asset.position.z, -4, 4)
             },
-            size: {
-                x: MathUtils.clamp(asset.size.x, 0.01, 8),
-                y: MathUtils.clamp(asset.size.y, 0.01, 8),
-                z: MathUtils.clamp(asset.size.z, 0.01, 8)
+            rotation: {
+                x: asset.rotation?.x || 0,
+                y: asset.rotation?.y || 0,
+                z: asset.rotation?.z || 0
             },
-            color: asset.color,
-            animations: asset.animations || []
+            scale: {
+                x: MathUtils.clamp(asset.scale?.x || 1, 0.01, 8),
+                y: MathUtils.clamp(asset.scale?.y || 1, 0.01, 8),
+                z: MathUtils.clamp(asset.scale?.z || 1, 0.01, 8)
+            }
         };
     }
 };

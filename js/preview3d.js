@@ -162,7 +162,15 @@ export class Preview3D {
             for(let i = 0; i < grpAssets.length; i++) {
                 const a = grpAssets[i];
                 dummy.position.set(a.position.x, a.position.y, a.position.z);
-                dummy.scale.set(a.size.x, a.size.y, a.size.z);
+                dummy.rotation.set(0, 0, 0); // reset
+                if (a.rotation) {
+                    dummy.rotation.set(
+                        (a.rotation.x || 0) * Math.PI / 180,
+                        (a.rotation.y || 0) * Math.PI / 180,
+                        (a.rotation.z || 0) * Math.PI / 180
+                    );
+                }
+                dummy.scale.set(a.scale.x, a.scale.y, a.scale.z);
                 dummy.updateMatrix();
                 iMesh.setMatrixAt(i, dummy.matrix);
             }

@@ -4,8 +4,10 @@ import { Preview3D } from './preview3d.js';
 
 class App {
     constructor() {
+        this.baseAssets = [];
         this.assets = [];
         this.currentImageInfo = null;
+        this.transformState = { rotation: 90, flipH: false, flipV: false };
 
         this.initUI();
         // Delay 3D init slightly to ensure container is rendered and has size
@@ -34,7 +36,10 @@ class App {
         
         this.reprocessBtn = document.getElementById('reprocess-btn');
 
-        // Rotations
+        // Rotations & Transforms
+        this.fineRotationInput = document.getElementById('fine-rotation');
+        this.fineRotationVal = document.getElementById('fine-rotation-val');
+
         this.rotCcwBtn = document.getElementById('rot-ccw-btn');
         this.rotCwBtn = document.getElementById('rot-cw-btn');
         this.flipHBtn = document.getElementById('flip-h-btn');
@@ -51,6 +56,7 @@ class App {
         this.importArea = document.getElementById('import-code');
         this.importBtn = document.getElementById('import-btn');
         this.importError = document.getElementById('import-error');
+        this.rawJsonArea = document.getElementById('raw-json-code');
 
         // Stats
         this.cubeCountSpan = document.getElementById('cube-count');
@@ -91,6 +97,11 @@ class App {
                 this.colorCountSetting.style.display = 'none';
             }
         });
+        
+        // Run once manually on init to set default UI state
+        if (this.presetSelect.value !== 'custom') {
+            this.colorCountSetting.style.display = 'none';
+        }
 
         this.colorCountInput.addEventListener('input', (e) => {
             this.colorCountVal.textContent = e.target.value;
@@ -110,7 +121,13 @@ class App {
              }
         });
 
-        // Actions
+        // Transforms
+        this.fineRotationInput.addEventListener('input', (e) => {
+            this.fineRotationVal.textContent = e.target.value + '°';
+            this.transformState.rotation = parseInt(e.target.value);
+            this.applyTransforms();
+        });
+
         this.rotCwBtn.addEventListener('click', () => this.transformBlueprint('rotcw'));
         this.rotCcwBtn.addEventListener('click', () => this.transformBlueprint('rotccw'));
         this.flipHBtn.addEventListener('click', () => this.transformBlueprint('fliph'));
@@ -154,7 +171,19 @@ class App {
                 this.dropZone.querySelector('.drop-text').style.display = 'block';
                 this.reprocessBtn.disabled = true;
 
-                this.updateAssets(newAssets);
+                // Decode raw for the display section
+                const rawObj = Blueprint.decodeRaw(code);
+                if (rawObj) {
+                    this.rawJsonArea.value = JSON.stringify(rawObj, null, 2);
+                } else {
+                    this.rawJsonArea.value = "Failed to parse raw JSON";
+                }
+
+                // Setup imported state
+                this.transformState = { rotation: 0, flipH: false, flipV: false };
+                this.updateUIForState();
+                
+                this.updateAssets(newAssets, newAssets, "Imported");
             } catch (e) {
                 console.error(e);
                 this.importError.classList.remove('hidden');
@@ -209,7 +238,11 @@ class App {
             };
 
             const result = await ImageProcessor.processImage(img, options);
-            this.updateAssets(result.assets, `${result.targetX}x${result.targetY}`);
+            // Default generated images to 90deg CW to fix game's default CCW import expectation
+            this.transformState = { rotation: 90, flipH: false, flipV: false };
+            this.updateUIForState();
+            
+            this.updateAssets(result.assets, result.assets, `${result.targetX}x${result.targetY}`);
             
         } catch(e) {
             console.error("Processing error:", e);
@@ -218,42 +251,69 @@ class App {
         }
     }
 
-    transformBlueprint(action) {
-        if(!this.assets || this.assets.length === 0) return;
+    updateUIForState() {
+        this.fineRotationInput.value = this.transformState.rotation;
+        this.fineRotationVal.textContent = this.transformState.rotation + '°';
+    }
 
-        const newData = this.assets.map(a => {
+    transformBlueprint(action) {
+        if(!this.baseAssets || this.baseAssets.length === 0) return;
+
+        if (action === 'rotcw') {
+            this.transformState.rotation = (this.transformState.rotation + 90) % 360;
+            // keep it in -180 to 180 logic if slider requires
+            if (this.transformState.rotation > 180) this.transformState.rotation -= 360;
+        } else if (action === 'rotccw') {
+            this.transformState.rotation = (this.transformState.rotation - 90) % 360;
+            if (this.transformState.rotation < -180) this.transformState.rotation += 360;
+        } else if (action === 'fliph') {
+            this.transformState.flipH = !this.transformState.flipH;
+        } else if (action === 'flipv') {
+            this.transformState.flipV = !this.transformState.flipV;
+        }
+
+        this.updateUIForState();
+        this.applyTransforms();
+    }
+
+    applyTransforms() {
+        if (!this.baseAssets || this.baseAssets.length === 0) return;
+
+        // Convert degrees to radians for JS Math
+        const rad = this.transformState.rotation * Math.PI / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+
+        const newData = this.baseAssets.map(a => {
             let nx = a.position.x;
             let nz = a.position.z;
-            let nsx = a.size.x;
-            let nsz = a.size.z;
 
-            if (action === 'rotcw') {
-                nx = a.position.z;
-                nz = -a.position.x;
-                nsx = a.size.z;
-                nsz = a.size.x;
-            } else if (action === 'rotccw') {
-                nx = -a.position.z;
-                nz = a.position.x;
-                nsx = a.size.z;
-                nsz = a.size.x;
-            } else if (action === 'fliph') {
-                nx = -a.position.x;
-            } else if (action === 'flipv') {
-                nz = -a.position.z;
-            }
+            // Apply Flips first
+            if (this.transformState.flipH) nx = -nx;
+            if (this.transformState.flipV) nz = -nz;
+
+            // Apply Rotation around Y axis
+            const rx = nx * cos - nz * sin;
+            const rz = nx * sin + nz * cos;
+
+            // Compute new Y Rotation for individual cube
+            const baseYRot = a.rotation?.y || 0;
+            let finalYRot = baseYRot - this.transformState.rotation;
 
             return {
                 ...a,
-                position: { ...a.position, x: nx, z: nz },
-                size: { ...a.size, x: nsx, z: nsz }
+                position: { ...a.position, x: rx, z: rz },
+                rotation: { ...a.rotation, y: finalYRot }
             };
         });
 
-        this.updateAssets(newData);
+        this.updateAssets(newData, this.baseAssets, null);
     }
 
-    updateAssets(newAssets, dimsStr = "Custom") {
+    updateAssets(newAssets, baseAssetsRef, dimsStr = null) {
+        if (baseAssetsRef) {
+            this.baseAssets = baseAssetsRef;
+        }
         this.assets = newAssets;
 
         // Update UI counters
@@ -264,7 +324,9 @@ class App {
             this.cubeCountSpan.parentElement.classList.remove('danger');
         }
 
-        this.cubeDimsSpan.textContent = dimsStr;
+        if (dimsStr !== null) {
+            this.cubeDimsSpan.textContent = dimsStr;
+        }
 
         // Enable actions
         this.actionButtons.forEach(btn => btn.disabled = (this.assets.length === 0));

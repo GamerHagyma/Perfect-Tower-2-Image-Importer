@@ -55,7 +55,8 @@
                     <div class="setting-item">
                         <label for="color-preset">Color Palette</label>
                         <select id="color-preset">
-                            <option value="custom">Custom (Quantize)</option>
+                            <option value="original" selected>All Colors (No Quantization)</option>
+                            <option value="custom">Custom Quantization</option>
                             <option value="gb">Gameboy (4 colors)</option>
                             <option value="nes">NES (54 colors)</option>
                         </select>
@@ -68,7 +69,7 @@
 
                     <div class="setting-item">
                         <label for="target-resolution">Max Resolution: <span id="target-res-val">30</span></label>
-                        <input type="range" id="target-resolution" min="10" max="64" value="30" step="1">
+                        <input type="range" id="target-resolution" min="10" max="128" value="30" step="1">
                         <small class="helper-text">Higher resolution may exceed the 500 cube limit.</small>
                     </div>
                     
@@ -82,7 +83,12 @@
 
                 <!-- Blueprint Actions -->
                 <section class="control-group">
-                    <h2>Blueprint Rotation</h2>
+                    <h2>Blueprint Transform</h2>
+                    
+                    <div class="setting-item">
+                        <label for="fine-rotation">Y-Axis Rotation: <span id="fine-rotation-val">90°</span></label>
+                        <input type="range" id="fine-rotation" class="disable-empty" min="-180" max="180" value="90" step="1" disabled>
+                    </div>
                     <div class="button-grid">
                         <button id="rot-ccw-btn" class="btn secondary-btn disable-empty" disabled>↺ 90° CCW</button>
                         <button id="rot-cw-btn" class="btn secondary-btn disable-empty" disabled>↻ 90° CW</button>
@@ -118,6 +124,12 @@
                     <textarea id="import-code" class="code-area" placeholder="Paste PT2 Blueprint string here..."></textarea>
                     <button id="import-btn" class="btn primary-btn">Import & Visualize</button>
                     <span id="import-error" class="error-text hidden">Invalid blueprint format</span>
+                </section>
+
+                <section class="control-group">
+                    <h2>Raw JSON Decoder</h2>
+                    <p class="helper-text">See the inner decoded JSON data.</p>
+                    <textarea id="raw-json-code" class="code-area" readonly></textarea>
                 </section>
             </aside>
         </main>
