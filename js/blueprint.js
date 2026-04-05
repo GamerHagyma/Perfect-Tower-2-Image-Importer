@@ -46,7 +46,17 @@ export const Blueprint = {
             // Validate all assets before encoding
             const validAssets = assets.map(a => Blueprint.validateAsset(a));
 
-            const rootObject = { assets: validAssets };
+            const rootObject = {
+                assets: validAssets,
+                material: { color: "#FFFFFF" },
+                mesh: {
+                    shape: "cube",
+                    triangles: [0, 1, 2, 0, 2, 3, 8, 4, 7, 8, 7, 9, 17, 15, 6, 17, 6, 10, 12, 5, 14, 12, 14, 23, 18, 22, 13, 18, 13, 11, 19, 21, 16, 16, 21, 20]
+                },
+                missileEndColor: "#FF0000",
+                missileSpawnHeight: 4,
+                missileStartColor: "#FBFF00"
+            };
 
             // 1. Stringify Inner Object
             const innerString = JSON.stringify(rootObject);
