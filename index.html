@@ -78,6 +78,20 @@
                         <input type="range" id="depth-scale" min="0.05" max="2" value="0.1" step="0.05">
                     </div>
 
+                    <div class="setting-item">
+                        <label for="merge-tolerance">Merge Tolerance: <span id="merge-tolerance-val">0</span></label>
+                        <input type="range" id="merge-tolerance" min="0" max="100" value="0" step="1">
+                        <small class="helper-text">Merge similar colors into one block. Higher = fewer cubes but less accurate colors.</small>
+                    </div>
+
+                    <div class="setting-item toggle-item">
+                        <label for="depth-layers" class="toggle-label">
+                            <input type="checkbox" id="depth-layers">
+                            <span>Depth Layers</span>
+                        </label>
+                        <small class="helper-text">Uses the most common color as a single background slab, then stacks detail cubes on top. Greatly reduces block count.</small>
+                    </div>
+
                     <button id="reprocess-btn" class="btn primary-btn" disabled>Reprocess Image</button>
                 </section>
 

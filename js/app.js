@@ -33,6 +33,11 @@ class App {
         
         this.depthScaleInput = document.getElementById('depth-scale');
         this.depthScaleVal = document.getElementById('depth-scale-val');
+
+        this.mergeToleranceInput = document.getElementById('merge-tolerance');
+        this.mergeToleranceVal = document.getElementById('merge-tolerance-val');
+
+        this.depthLayersCheckbox = document.getElementById('depth-layers');
         
         this.reprocessBtn = document.getElementById('reprocess-btn');
 
@@ -113,6 +118,10 @@ class App {
 
         this.depthScaleInput.addEventListener('input', (e) => {
             this.depthScaleVal.textContent = e.target.value;
+        });
+
+        this.mergeToleranceInput.addEventListener('input', (e) => {
+            this.mergeToleranceVal.textContent = e.target.value;
         });
 
         this.reprocessBtn.addEventListener('click', () => {
@@ -234,7 +243,9 @@ class App {
                 targetResolution: parseInt(this.targetResInput.value),
                 depthScale: parseFloat(this.depthScaleInput.value),
                 colorPreset: this.presetSelect.value,
-                colorCount: parseInt(this.colorCountInput.value)
+                colorCount: parseInt(this.colorCountInput.value),
+                mergeTolerance: parseInt(this.mergeToleranceInput.value),
+                useDepthLayers: this.depthLayersCheckbox.checked
             };
 
             const result = await ImageProcessor.processImage(img, options);
